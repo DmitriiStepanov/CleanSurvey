@@ -119,7 +119,7 @@ if st.session_state.processed_files:
             st.session_state.error_message = None
             logger.info("Временные файлы успешно удалены")
             st.success("Временные файлы удалены")
-            st.experimental_rerun()
+            st.rerun()
         except Exception as e:
             logger.error(f"Ошибка при удалении временных файлов: {str(e)}")
             st.error(f"Ошибка при удалении файлов: {str(e)}") 

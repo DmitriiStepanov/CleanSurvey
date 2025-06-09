@@ -36,7 +36,10 @@ def build_prompt(batch):
     return prompt
 
 def get_labels_with_retry(paragraphs, api_key, max_retries=3):
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(
+        api_key=api_key,
+        http_client=None  # Отключаем использование прокси
+    )
     
     @retry(stop=stop_after_attempt(max_retries), wait=wait_exponential(multiplier=1, min=4, max=10))
     def _get_labels():
