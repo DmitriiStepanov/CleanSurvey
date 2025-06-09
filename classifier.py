@@ -3,7 +3,7 @@ classifier.py
 Классификация каждого абзаца в одну из меток через OpenAI GPT.
 """
 
-import openai
+from openai import OpenAI
 import os
 import time
 import logging
@@ -36,9 +36,11 @@ def build_prompt(batch):
     return prompt
 
 def get_labels_with_retry(paragraphs, api_key, max_retries=3):
+    client = OpenAI(api_key=api_key)
+    
     @retry(stop=stop_after_attempt(max_retries), wait=wait_exponential(multiplier=1, min=4, max=10))
     def _get_labels():
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "Вы - помощник для классификации текста анкеты. Классифицируйте каждый параграф как: GENERAL_INSTRUCTION (общие инструкции), BLOCK_HEADER (заголовок блока), BLOCK_INSTRUCTION (инструкция к блоку), QUESTION (вопрос), QUESTION_INSTRUCTION (инструкция к вопросу), ANSWER_OPTION (вариант ответа), ROW (строка матрицы), OTHER (другое)."},
@@ -52,8 +54,8 @@ def get_labels_with_retry(paragraphs, api_key, max_retries=3):
     return _get_labels()
 
 def label_paragraphs(paragraphs, progress_callback=None, batch_size=3):
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    if not openai.api_key:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
         raise ValueError("Переменная окружения OPENAI_API_KEY не установлена.")
 
     labels = []
@@ -66,7 +68,7 @@ def label_paragraphs(paragraphs, progress_callback=None, batch_size=3):
 
         try:
             batch_texts = [p['text'] for p in batch]
-            batch_labels = get_labels_with_retry(batch_texts, openai.api_key)
+            batch_labels = get_labels_with_retry(batch_texts, api_key)
             
             # Проверяем количество полученных меток
             if len(batch_labels) != len(batch):
