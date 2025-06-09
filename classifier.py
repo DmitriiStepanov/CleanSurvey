@@ -3,7 +3,7 @@ classifier.py
 Классификация каждого абзаца в одну из меток через OpenAI GPT.
 """
 
-from openai import OpenAI
+import openai
 import os
 import time
 import logging
@@ -36,14 +36,11 @@ def build_prompt(batch):
     return prompt
 
 def get_labels_with_retry(paragraphs, api_key, max_retries=3):
-    client = OpenAI(
-        api_key=api_key,
-        http_client=None  # Отключаем использование прокси
-    )
+    openai.api_key = api_key
     
     @retry(stop=stop_after_attempt(max_retries), wait=wait_exponential(multiplier=1, min=4, max=10))
     def _get_labels():
-        response = client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "Вы - помощник для классификации текста анкеты. Классифицируйте каждый параграф как: GENERAL_INSTRUCTION (общие инструкции), BLOCK_HEADER (заголовок блока), BLOCK_INSTRUCTION (инструкция к блоку), QUESTION (вопрос), QUESTION_INSTRUCTION (инструкция к вопросу), ANSWER_OPTION (вариант ответа), ROW (строка матрицы), OTHER (другое)."},
